@@ -11,7 +11,7 @@ except ImportError:
 
 from utils import ICPVisualizer, load_point_cloud, view_point_cloud, quaternion_matrix, \
     quaternion_from_axis_angle, load_pcs_and_camera_poses, save_point_cloud, load_point_cloud_customized, \
-    add_noise
+    add_noise, downsample_pc
 
 def transform_point_cloud(point_cloud, t, R):
     """
@@ -62,7 +62,7 @@ def filter_point_cloud(point_cloud):
     # ------------------------------------------------
     return filtered_pc
 
-def random_transform_bunny(pc_bunny):
+def transform_bunny(pc_bunny):
     pc_bunny_xyz = pc_bunny[:, :3]
     R = np.array([
         [1, 0, 0],
@@ -72,6 +72,26 @@ def random_transform_bunny(pc_bunny):
     pc_bunny_xyz = pc_bunny_xyz @ R.T
     pc_bunny_xyz[:, 2] -= 0.029
 
+    pc_bunny[:, :3] = pc_bunny_xyz
+
+    return pc_bunny
+
+def transform_armadillo(pc_armadillo):
+    pc_armadillo_xyz = pc_armadillo[:, :3]
+    R = np.array([
+        [1, 0, 0],
+        [0,  0, -1],
+        [0,  1, 0]
+    ])
+    pc_armadillo_xyz = pc_armadillo_xyz @ R.T
+    pc_armadillo_xyz[:, 2] += 0.06
+
+    pc_armadillo[:, :3] = pc_armadillo_xyz
+
+    return pc_armadillo
+
+def random_transform(pc):
+    pc_xyz = pc[:, :3]
     # Random translation in X and Y, bounded by [-6, 6]
     T_random = np.array([
         np.random.uniform(-0.5, 0.5),  
@@ -86,20 +106,18 @@ def random_transform_bunny(pc_bunny):
         [np.sin(theta),  np.cos(theta), 0],
         [0,              0,             1]
     ])
-    pc_bunny_xyz = pc_bunny_xyz @ R_random.T + T_random
-    pc_bunny_xyz = np.asarray(add_noise(pc_bunny_xyz, 0.002))
-    print(pc_bunny_xyz)
-
-    pc_bunny[:, :3] = pc_bunny_xyz
-
-    return pc_bunny
+    pc_xyz = pc_xyz @ R_random.T + T_random
+    pc_xyz = np.asarray(add_noise(pc_xyz, 0.001))
+    pc[:, :3] = pc_xyz
+    return pc
 
 def scene_construction(path_to_pointcloud_files, visualize=True):
     color = [0, 100 / 255, 0]
     # Load the model
     pc_M = load_point_cloud(os.path.join(path_to_pointcloud_files, 'michigan_M_med.ply'))  # Model
     pc_M[:, 3:] = np.array([.73, .21, .1]) * np.ones((pc_M.shape[0], 3)) # Paint it red
-    pc_bunny = load_point_cloud_customized("pointclouds/bun_zipper.ply", color, 0.005) # Model
+    pc_bunny = load_point_cloud_customized("pointclouds/bun_zipper.ply", "Bunny", color, 0.0034, 1) # Model
+    pc_armadillo = load_point_cloud_customized("pointclouds/Armadillo.ply", "Armadillo", color, 2.9, 0.001) # Model
 
     # Generate the scene
     pcs, camera_poses = load_pcs_and_camera_poses(path_to_pointcloud_files)
@@ -107,9 +125,12 @@ def scene_construction(path_to_pointcloud_files, visualize=True):
     pc_M_scene = filter_point_cloud(pc)
     # pc_M_scene[:, -3:] = color
 
-    pc_bunny_scene = random_transform_bunny(pc_bunny)
+    pc_bunny_scene = downsample_pc(random_transform(transform_bunny(pc_bunny)), 2000)
+    pc_armadillo_scene = downsample_pc(random_transform(transform_armadillo(pc_armadillo)), 2000)
+    print(pc_bunny_scene.shape)
 
-    pc_scene = np.concatenate([pc_M_scene, pc_bunny_scene], axis=0)
+    pc_scene = np.concatenate([pc_M_scene, pc_bunny_scene, pc_armadillo_scene], axis=0)
+    np.random.shuffle(pc_scene)
 
     if visualize:
         print('Displaying filtered point cloud. Close the window to continue.')

@@ -146,17 +146,17 @@ def load_point_cloud(ply_file_path):
         print('No o3d was found -- \n\tInstall Open3d or visualize the saved point cloud (as .ply) using MeshLab')
     return pc
 
-def load_point_cloud_customized(ply_file_path, color, voxel_size):
+def load_point_cloud_customized(ply_file_path, name, color, voxel_size, scale):
     pc = None
     try:
         pcd = o3d.io.read_point_cloud(ply_file_path)
         pcd_downsampled = pcd.voxel_down_sample(voxel_size)
         pcd_points = np.asarray(pcd_downsampled.points)
+        pcd_points *= scale
         colors = np.tile(color, (pcd_points.shape[0], 1))
         pcd_colors = np.asarray(colors)
-        print(pcd_colors.shape)
         pc = np.concatenate([pcd_points, pcd_colors], axis=1)
-        print('PC SHAPE: ', pc.shape)
+        print(f'{name} PC SHAPE: {pc.shape}')
     except NameError:
         print('No o3d was found -- \n\tInstall Open3d or visualize the saved point cloud (as .ply) using MeshLab')
     return pc
@@ -253,3 +253,11 @@ def add_noise(pc, variance,distribution='gaussian'):
     # Add noise to the point cloud
     pc_out = pc + noise
     return pc_out
+
+def downsample_pc(pc, num_samples):
+    # Randomly select indices without replacement
+    indices = np.random.choice(pc.shape[0], size=num_samples, replace=False)
+
+    # Downsample the array (retain all 6 columns)
+    downsampled_pc = pc[indices, :]
+    return downsampled_pc
