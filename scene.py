@@ -127,18 +127,16 @@ def scene_construction(path_to_pointcloud_files, visualize=True):
 
     pc_bunny_scene = downsample_pc(random_transform(transform_bunny(pc_bunny)), 2000)
     pc_armadillo_scene = downsample_pc(random_transform(transform_armadillo(pc_armadillo)), 2000)
-    print(pc_bunny_scene.shape)
 
     pc_scene = np.concatenate([pc_M_scene, pc_bunny_scene, pc_armadillo_scene], axis=0)
     np.random.shuffle(pc_scene)
 
     if visualize:
-        print('Displaying filtered point cloud. Close the window to continue.')
+        print('Displaying scene point cloud. Close the window to continue.')
         view_point_cloud(pc_scene)
-    else:
-        print('Filtered scene point clouds saved as we cannot visualize it.\n Use software such as Meshlab to visualize them.')
-        save_point_cloud(pc_scene, 'filtered_scene_pc', path_to_pointcloud_files)
+    
+    return pc_scene
 
-if __name__ == '__main__':
-    path_to_files = 'pointclouds'
-    scene_construction(path_to_files, visualize=visualize)
+# if __name__ == '__main__':
+#     path_to_files = 'pointclouds'
+#     scene_construction(path_to_files, visualize=visualize)
