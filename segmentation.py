@@ -66,7 +66,7 @@ def ransac(data):
     return model_best
     
 def filter_table(pc, model):
-    distance_threshold = 0.007
+    distance_threshold = 0.01
     normal, d, mu = model
     numerator = np.abs(np.dot(pc, normal.T) + d)
     denominator = np.linalg.norm(normal[0])
@@ -96,14 +96,15 @@ def segment(path_to_files, visualize):
     color_mapping = {value: color for value, color in zip(classes, colors)}
     color_mapping[-1] = [0, 0, 0, 1]
     new_colors = np.array([color_mapping[x] for x in classifications], dtype=float)
-    pc_objects[:, 3:6] = new_colors[:, :3]
+    pc_objects[:, 3:] = new_colors[:, :3]
     if visualize:
         print('Displaying filtered point cloud. Close the window to continue.')
         view_point_cloud(pc_objects)
+    return classifications, pc_objects
         
-if __name__ == '__main__':
-    path_to_files = 'pointclouds'
-    segment(path_to_files, visualize)
+# if __name__ == '__main__':
+#     path_to_files = 'pointclouds'
+#     segment(path_to_files, visualize)
     
     
     
