@@ -72,7 +72,7 @@ def load_models(path_to_pointcloud_files):
     # pc_M = load_point_cloud(os.path.join(path_to_pointcloud_files, 'michigan_M_med.ply'))  # Model
     pc_M[:, 3:] = np.array([.73, .21, .1]) * np.ones((pc_M.shape[0], 3)) # Paint it red
     pc_bunny = load_point_cloud_customized("pointclouds/bun_zipper.ply", "Bunny", color, 0.005, 1) # Model
-    pc_armadillo = load_point_cloud_customized("pointclouds/Armadillo.ply", "Armadillo", color, 3.5, 0.001) # Model
+    pc_armadillo = load_point_cloud_customized("pointclouds/Armadillo.ply", "Armadillo", color, 3.7, 0.001) # Model
     pc_chair = load_point_cloud_customized("pointclouds/chair.ply", "Chair", color, 20, 0.0002) # Model
     return [pc_M, pc_bunny, pc_armadillo, pc_chair]
     
@@ -91,7 +91,7 @@ def scene_construction(path_to_pointcloud_files, visualize=True):
     pc_armadillo_scene = downsample_pc(transform.random_transform(transform.transform_armadillo(pc_models[2])), 2000)
     pc_chair_scene = downsample_pc(transform.random_transform(transform.transform_chair(pc_models[3])), 2000)
 
-    pc_scene = np.concatenate([pc_M_scene], axis=0)
+    pc_scene = np.concatenate([pc_M_scene, pc_bunny_scene], axis=0)
     np.random.shuffle(pc_scene)
 
     if visualize:

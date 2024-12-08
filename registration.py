@@ -37,7 +37,7 @@ def alignment(pc_target, pc_source):
     # Initial transform
     print("Initial transform...")
     current = time.time()
-    C = get_pfh_correspondence(pfh_target, pfh_source)
+    C = get_pfh_correspondence(pfh_source, pfh_target)
     R, t = get_transform(C)
     aligned = pfh_source.transform(R, t)
     end = time.time()
@@ -52,7 +52,7 @@ def alignment(pc_target, pc_source):
     # Standard ICP
     for i in range(5):
         current = time.time()
-        C = get_correspondence(pfh_target, pfh_source)
+        C = get_correspondence(pfh_source, pfh_target)
         R, t = get_transform(C)
         aligned = pfh_source.transform(R, t)
         end = time.time()
@@ -62,12 +62,13 @@ def alignment(pc_target, pc_source):
         error = get_error(C, R, t)
         errors.append(error)
         print(error)
+        if error <= threshold:
+            align = True
+            break
         if len(errors) > 1:
             relative_change = abs(errors[-1] - errors[-2]) / errors[-2]
             if relative_change < threshold or error <= threshold:
                 print(f"Converged at iteration {i} with relative change {relative_change:.6f}")
-                # if error <= threshold:
-                align = True
                 break
     align = True
     return align, R_full, t_full
@@ -75,7 +76,7 @@ def alignment(pc_target, pc_source):
 def register(path_to_pointcloud_files, visualize):
     classification, pc_objects = segment(path_to_pointcloud_files, visualize)
     pc_models = load_models(path_to_pointcloud_files)
-    pc_models = pc_models[:2]
+    pc_models = pc_models[1:3]
     
     classes = np.unique(classification)
     pc_separated = {cls: pc_objects[classification == cls] for cls in classes}

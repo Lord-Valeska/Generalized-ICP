@@ -60,6 +60,6 @@ def random_transform(pc):
         [0,              0,             1]
     ])
     pc_xyz = pc_xyz @ R_random.T + T_random
-    pc_xyz = np.asarray(add_noise(pc_xyz, 0.001))
+    # pc_xyz = np.asarray(add_noise(pc_xyz, 0.001))
     pc[:, :3] = pc_xyz
     return pc
