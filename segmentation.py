@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import os
+import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
 try:
     import open3d as o3d
@@ -14,6 +15,7 @@ from utils import ICPVisualizer, load_point_cloud, view_point_cloud, quaternion_
     add_noise, downsample_pc
     
 from scene import scene_construction
+from sklearn.cluster import DBSCAN
     
 def load_scene(path_to_files, visualize):
     pc_scene = scene_construction(path_to_files, visualize)
@@ -64,7 +66,7 @@ def ransac(data):
     return model_best
     
 def filter_table(pc, model):
-    distance_threshold = 0.0065
+    distance_threshold = 0.007
     normal, d, mu = model
     numerator = np.abs(np.dot(pc, normal.T) + d)
     denominator = np.linalg.norm(normal[0])
@@ -73,11 +75,28 @@ def filter_table(pc, model):
     return filtered_idx
     
 def segment(path_to_files, visualize):
+    eps = 0.02
+    min_points = 10
+    
     pc_scene = load_scene(path_to_files, visualize=visualize)
     pc_scene_xyz = pc_scene[:, :3]
     model = ransac(pc_scene_xyz)
     filtered_idx = filter_table(pc_scene_xyz, model)
     pc_objects = pc_scene[filtered_idx]
+    if visualize:
+        print('Displaying filtered point cloud. Close the window to continue.')
+        view_point_cloud(pc_objects)
+     
+    dbscan = DBSCAN(eps=eps, min_samples=min_points)
+    dbscan.fit(pc_objects[:, :3])
+    classifications = dbscan.labels_
+    classes = list(set(classifications))
+    print(classes)
+    colors = plt.cm.viridis(np.linspace(0, 1, len(classes)))  # Use a colormap
+    color_mapping = {value: color for value, color in zip(classes, colors)}
+    color_mapping[-1] = [0, 0, 0, 1]
+    new_colors = np.array([color_mapping[x] for x in classifications], dtype=float)
+    pc_objects[:, 3:6] = new_colors[:, :3]
     if visualize:
         print('Displaying filtered point cloud. Close the window to continue.')
         view_point_cloud(pc_objects)

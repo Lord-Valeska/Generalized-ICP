@@ -94,8 +94,8 @@ def random_transform(pc):
     pc_xyz = pc[:, :3]
     # Random translation in X and Y, bounded by [-6, 6]
     T_random = np.array([
-        np.random.uniform(-0.5, 0.5),  
-        np.random.uniform(-0.5, 0.5),  
+        np.random.uniform(-0.45, 0.45),  
+        np.random.uniform(-0.45, 0.45),  
         0                          
     ])
     # Random rotation angle in radians
