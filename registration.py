@@ -14,8 +14,6 @@ except ImportError:
 from utils import ICPVisualizer, load_point_cloud, view_point_cloud, quaternion_matrix, \
     quaternion_from_axis_angle, load_pcs_and_camera_poses, save_point_cloud, load_point_cloud_customized, \
     add_noise, downsample_pc, get_o3d_pc
-from pfh import PFH, SPFH, FPFH, get_pfh_correspondence, get_transform, get_error, get_correspondence, \
-    get_chamfer_error
 from segmentation import segment
 from scene import load_models
 
@@ -39,32 +37,46 @@ def alignment(pcd_scene, pcd_model):
     )
 
     # Initial transform with RANSAC
-    distance_threshold =num * 1.5
     result_ransac = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
         source=pcd_model,  
         target=pcd_scene,  
         source_feature=source_fpfh,  
         target_feature=target_fpfh,  
         mutual_filter=False,  
-        max_correspondence_distance=0.1, 
+        max_correspondence_distance=0.4, 
         estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
         ransac_n=4,  # Number of points for RANSAC
         checkers=[
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.7),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(0.005)
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.6),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(0.008)
         ],
         criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 1.0)
     )
     
     # Generalized ICP
     # Using the transformation from RANSAC as the initial transformation
-    result_gicp = o3d.pipelines.registration.registration_generalized_icp(
-        pcd_model, pcd_scene, max_correspondence_distance=0.1,
+    result_icp = o3d.pipelines.registration.registration_generalized_icp(
+        pcd_model, pcd_scene, max_correspondence_distance=0.3,
         init=result_ransac.transformation,
         estimation_method=o3d.pipelines.registration.TransformationEstimationForGeneralizedICP()
     )
+
+    # # Point-to-Point ICP
+    # result_icp = o3d.pipelines.registration.registration_icp(
+    #     pcd_model, pcd_scene, max_correspondence_distance=0.3,
+    #     init=result_ransac.transformation,
+    #     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint()
+    # )
+    # # Slight offset with M
+
+    # # Point-to-Plane ICP
+    # result_icp = o3d.pipelines.registration.registration_icp(
+    #     pcd_model, pcd_scene, max_correspondence_distance=0.3,
+    #     init=result_ransac.transformation,
+    #     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane()
+    # )
     
-    return result_gicp
+    return result_icp
     
 def register(path_to_pointcloud_files, visualize):
     classification, pc_objects = segment(path_to_pointcloud_files, visualize)
@@ -78,8 +90,9 @@ def register(path_to_pointcloud_files, visualize):
     classes = np.unique(classification)
     pcd_separated = {}
     for cls in classes:
-        class_points = pc_objects[classification == cls]
-        pcd_separated[cls] = get_o3d_pc(class_points)  
+        if cls != -1:
+            class_points = pc_objects[classification == cls]
+            pcd_separated[cls] = get_o3d_pc(class_points)  
     
     results = []
     for cls, pcd in pcd_separated.items():
@@ -107,9 +120,11 @@ def register(path_to_pointcloud_files, visualize):
         visualization_geometries.append(pcd_objects)
         
     for result in results:
-        model_best = copy.deepcopy(result["model"])
-        model_best.transform(result["transformation"])
-        visualization_geometries.append(model_best)
+        print(f"Best fitness: {result['fitness']}, best RMSE: {result['rmse']}")
+        if result['rmse'] < 0.015: # 0.02 for gicp, 0.01 for point to point and point to plane
+            model_best = copy.deepcopy(result["model"])
+            model_best.transform(result["transformation"])
+            visualization_geometries.append(model_best)
         
     print('Displaying filtered point cloud. Close the window to continue.')
     o3d.visualization.draw_geometries(visualization_geometries)

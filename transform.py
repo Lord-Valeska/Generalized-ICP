@@ -42,6 +42,9 @@ def transform_armadillo(pc_armadillo):
 def transform_chair(pc_chair):
     pc_chair[:, 2] += 0.09
     return pc_chair
+
+def transform_tiger(pc_tiger):
+    return pc_tiger
     
 def random_transform(pc):
     pc_xyz = pc[:, :3]
@@ -60,6 +63,6 @@ def random_transform(pc):
         [0,              0,             1]
     ])
     pc_xyz = pc_xyz @ R_random.T + T_random
-    # pc_xyz = np.asarray(add_noise(pc_xyz, 0.001))
+    pc_xyz = np.asarray(add_noise(pc_xyz, 0.005))
     pc[:, :3] = pc_xyz
     return pc

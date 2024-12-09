@@ -66,8 +66,11 @@ def ransac(data):
     return model_best
     
 def filter_table(pc, model):
-    distance_threshold = 0.01
+    distance_threshold = 0.008
     normal, d, mu = model
+    normal[0, 0] = 0.0
+    normal[0, 1] = 0.0
+    d += 0.003 * normal[0, 2]
     numerator = np.abs(np.dot(pc, normal.T) + d)
     denominator = np.linalg.norm(normal[0])
     distances = numerator / denominator
@@ -75,7 +78,7 @@ def filter_table(pc, model):
     return filtered_idx
     
 def segment(path_to_files, visualize):
-    eps = 0.02
+    eps = 0.015
     min_points = 10
     
     pc_scene = load_scene(path_to_files, visualize=visualize)

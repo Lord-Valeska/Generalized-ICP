@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import time
 import os
 from scipy.spatial import KDTree
@@ -66,15 +67,16 @@ def filter_point_cloud(point_cloud):
     return filtered_pc
 
 def load_models(path_to_pointcloud_files):
-    color = [0, 100 / 255, 0]
+    color = [1.0, 0, 0]
     # Load the model
-    pc_M = load_point_cloud_customized("pointclouds/michigan_M_med.ply", "M", color, 0.002, 1) # Model
+    pc_M = load_point_cloud_customized("pointclouds/michigan_M_med.ply", "M", color, 0.001, 1) # Model
     # pc_M = load_point_cloud(os.path.join(path_to_pointcloud_files, 'michigan_M_med.ply'))  # Model
     pc_M[:, 3:] = np.array([.73, .21, .1]) * np.ones((pc_M.shape[0], 3)) # Paint it red
     pc_bunny = load_point_cloud_customized("pointclouds/bun_zipper.ply", "Bunny", color, 0.003, 1) # Model
-    pc_armadillo = load_point_cloud_customized("pointclouds/Armadillo.ply", "Armadillo", color, 3, 0.001) # Model
-    pc_chair = load_point_cloud_customized("pointclouds/chair.ply", "Chair", color, 15, 0.0002) # Model
-    return [pc_M, pc_bunny, pc_armadillo, pc_chair]
+    pc_armadillo = load_point_cloud_customized("pointclouds/Armadillo.ply", "Armadillo", color, 2.8, 0.001) # Model
+    pc_chair = load_point_cloud_customized("pointclouds/chair.ply", "Chair", color, 13, 0.0002) # Model
+    pc_tiger = load_point_cloud_customized("pointclouds/tiger.ply", "Tiger", color, 5, 0.0007)
+    return [pc_M, pc_bunny, pc_armadillo, pc_chair, pc_tiger]
     
 def scene_construction(path_to_pointcloud_files, visualize=True):
     color = [0, 100 / 255, 0]
@@ -87,11 +89,14 @@ def scene_construction(path_to_pointcloud_files, visualize=True):
     pc_M_scene = filter_point_cloud(pc)
     # pc_M_scene[:, -3:] = color
 
-    pc_bunny_scene = downsample_pc(transform.random_transform(transform.transform_bunny(pc_models[1])), 4000)
-    pc_armadillo_scene = downsample_pc(transform.random_transform(transform.transform_armadillo(pc_models[2])), 4000)
-    pc_chair_scene = downsample_pc(transform.random_transform(transform.transform_chair(pc_models[3])), 4000)
+    pc_bunny_scene = downsample_pc(transform.random_transform(transform.transform_bunny(pc_models[1])), 5000)
+    pc_armadillo_scene = downsample_pc(transform.random_transform(transform.transform_armadillo(pc_models[2])), 5000)
+    pc_chair_scene = downsample_pc(transform.random_transform(transform.transform_chair(pc_models[3])), 5000)
+    pc_tiger_scene = downsample_pc(transform.random_transform(pc_models[4]), 5000)
 
-    pc_scene = np.concatenate([pc_M_scene, pc_bunny_scene, pc_armadillo_scene, pc_chair_scene], axis=0)
+    scenes = [pc_bunny_scene, pc_armadillo_scene, pc_tiger_scene, pc_chair_scene]
+    random_idx = np.random.choice(range(0, len(scenes)), size=2, replace=False)
+    pc_scene = np.concatenate([pc_M_scene, scenes[random_idx[0]], scenes[random_idx[1]]], axis=0)
     np.random.shuffle(pc_scene)
 
     if visualize:
@@ -100,6 +105,6 @@ def scene_construction(path_to_pointcloud_files, visualize=True):
     
     return pc_scene
 
-# if __name__ == '__main__':
-#     path_to_files = 'pointclouds'
-#     scene_construction(path_to_files, visualize=visualize)
+if __name__ == '__main__':
+    path_to_files = 'pointclouds'
+    scene_construction(path_to_files, visualize=visualize)
