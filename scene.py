@@ -95,8 +95,9 @@ def scene_construction(path_to_pointcloud_files, visualize=True):
     pc_tiger_scene = downsample_pc(transform.random_transform(pc_models[4]), 5000)
 
     scenes = [pc_bunny_scene, pc_armadillo_scene, pc_tiger_scene, pc_chair_scene]
-    random_idx = np.random.choice(range(0, len(scenes)), size=2, replace=False)
-    pc_scene = np.concatenate([pc_M_scene, scenes[random_idx[0]], scenes[random_idx[1]]], axis=0)
+    # random_idx = np.random.choice(range(0, len(scenes)), size=2, replace=False)
+    # pc_scene = np.concatenate([pc_M_scene, scenes[random_idx[0]], scenes[random_idx[1]]], axis=0)
+    pc_scene = np.concatenate([pc_M_scene, pc_chair_scene, pc_tiger_scene], axis=0)
     np.random.shuffle(pc_scene)
 
     if visualize:

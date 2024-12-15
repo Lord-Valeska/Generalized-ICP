@@ -55,26 +55,25 @@ def alignment(pcd_scene, pcd_model):
     
     # Generalized ICP
     # Using the transformation from RANSAC as the initial transformation
-    result_icp = o3d.pipelines.registration.registration_generalized_icp(
-        pcd_model, pcd_scene, max_correspondence_distance=0.3,
-        init=result_ransac.transformation,
-        estimation_method=o3d.pipelines.registration.TransformationEstimationForGeneralizedICP()
-    )
+    # result_icp = o3d.pipelines.registration.registration_generalized_icp(
+    #     pcd_model, pcd_scene, max_correspondence_distance=0.3,
+    #     init=result_ransac.transformation,
+    #     estimation_method=o3d.pipelines.registration.TransformationEstimationForGeneralizedICP()
+    # )
 
-    # # Point-to-Point ICP
+    # Point-to-Point ICP
     # result_icp = o3d.pipelines.registration.registration_icp(
     #     pcd_model, pcd_scene, max_correspondence_distance=0.3,
     #     init=result_ransac.transformation,
     #     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint()
     # )
-    # # Slight offset with M
 
     # # Point-to-Plane ICP
-    # result_icp = o3d.pipelines.registration.registration_icp(
-    #     pcd_model, pcd_scene, max_correspondence_distance=0.3,
-    #     init=result_ransac.transformation,
-    #     estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane()
-    # )
+    result_icp = o3d.pipelines.registration.registration_icp(
+        pcd_model, pcd_scene, max_correspondence_distance=0.3,
+        init=result_ransac.transformation,
+        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPlane()
+    )
     
     return result_icp
     
@@ -119,12 +118,15 @@ def register(path_to_pointcloud_files, visualize):
     else:
         visualization_geometries.append(pcd_objects)
         
+    errors = []
     for result in results:
-        print(f"Best fitness: {result['fitness']}, best RMSE: {result['rmse']}")
+        print(f"Best inlier RMSE: {result['rmse']}")
         if result['rmse'] < 0.015: # 0.02 for gicp, 0.01 for point to point and point to plane
+            errors.append(result['rmse'])
             model_best = copy.deepcopy(result["model"])
             model_best.transform(result["transformation"])
             visualization_geometries.append(model_best)
+    print(f"Average RMSE: {sum(errors)}")
         
     print('Displaying filtered point cloud. Close the window to continue.')
     o3d.visualization.draw_geometries(visualization_geometries)
