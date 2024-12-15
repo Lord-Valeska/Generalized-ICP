@@ -1,1 +1,1 @@
-# Generalized-ICP
+# Point Cloud Segmentation and Registration
